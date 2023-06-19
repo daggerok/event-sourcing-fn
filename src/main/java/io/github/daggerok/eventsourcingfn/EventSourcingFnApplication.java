@@ -2,7 +2,6 @@ package io.github.daggerok.eventsourcingfn;
 
 import io.github.daggerok.eventsourcingfn.counter.CounterState;
 import io.github.daggerok.eventsourcingfn.counter.create.CreateCounterCommand;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
@@ -28,7 +27,7 @@ class CreateCounterResource {
     CounterState createCounter(@RequestBody CreateCounterCommand command) {
         log.info("createCounter(command={})", command);
         return new CounterState()
-                .setValue(UUID.fromString(command.getName()))
+                .setAggregateId(command.getAggregateId())
                 .setInitialValue(command.getInitialValue());
     }
 }

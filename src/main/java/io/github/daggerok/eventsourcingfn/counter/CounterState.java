@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
-public class CounterState implements State<CounterState> {
-    UUID value;
+public class CounterState implements State<UUID> {
+    UUID aggregateId = UUID.randomUUID();
     int initialValue;
 }

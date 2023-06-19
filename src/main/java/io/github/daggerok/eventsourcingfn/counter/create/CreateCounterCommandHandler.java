@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CreateCounterCommandHandler implements CommandHandler<CreateCounterCommand, CounterState> {
+public class CreateCounterCommandHandler implements CommandHandler<CreateCounterCommand, CounterState, UUID> {
 
     @Override
     public CounterState apply(Consumer<CreateCounterCommand> creation) {
@@ -16,6 +16,6 @@ public class CreateCounterCommandHandler implements CommandHandler<CreateCounter
 
         return new CounterState()
                 .setInitialValue(command.getInitialValue())
-                .setValue(UUID.fromString(command.getName()));
+                .setAggregateId(command.getAggregateId());
     }
 }

@@ -25,11 +25,11 @@ class CreateCounter implements Function<Consumer<CreateCounterCommand>, CounterS
 
     @Override
     public CounterState apply(Consumer<CreateCounterCommand> counter) {
-        CreateCounterCommand createCounterCommand = new CreateCounterCommand().setName(UUID.randomUUID().toString());
+        CreateCounterCommand createCounterCommand = new CreateCounterCommand().setAggregateId(UUID.randomUUID());
         log.info("default command: {}", createCounterCommand);
         counter.accept(createCounterCommand);
         log.info("patched command: {}", createCounterCommand);
-        return new CounterState().setValue(UUID.fromString(createCounterCommand.getName()))
+        return new CounterState().setAggregateId(createCounterCommand.getAggregateId())
                 .setInitialValue(createCounterCommand.getInitialValue());
     }
 }
@@ -46,7 +46,7 @@ class EventSourcingFnApplicationTests {
     @Test
     void should_create_counter_with_default_initial_value() {
         // given
-        var requestBody = new CreateCounterCommand().setName("0-0-0-0-1");
+        var requestBody = new CreateCounterCommand().setAggregateId(UUID.fromString("0-0-0-0-1"));
 
         // when
         webTestClient.post().uri("/counter/create")
@@ -54,13 +54,12 @@ class EventSourcingFnApplicationTests {
                 .exchange()
 
                 // then
-                .expectBody(new ParameterizedTypeReference<CounterState>() {
-                })
+                .expectBody(new ParameterizedTypeReference<CounterState>() {})
                 .consumeWith(counterIdEntityExchangeResult -> {
                     log.info("counterIdEntityExchangeResult: {}", counterIdEntityExchangeResult);
                     var counterId = counterIdEntityExchangeResult.getResponseBody();
                     assertThat(counterId).isNotNull();
-                    assertThat(counterId.getValue()).isEqualTo(UUID.fromString("0-0-0-0-1"));
+                    assertThat(counterId.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-1"));
                     assertThat(counterId.getInitialValue()).isEqualTo(0);
                 });
     }
@@ -68,7 +67,7 @@ class EventSourcingFnApplicationTests {
     @Test
     void should_create_counter_with_initial_value_123() {
         // given
-        var request = new CreateCounterCommand().setName("0-0-0-0-2").setInitialValue(123);
+        var request = new CreateCounterCommand().setAggregateId(UUID.fromString("0-0-0-0-2")).setInitialValue(123);
 
         // when
         webTestClient.post().uri("/counter/create")
@@ -77,13 +76,12 @@ class EventSourcingFnApplicationTests {
                 .exchange()
 
                 // then
-                .expectBody(new ParameterizedTypeReference<CounterState>() {
-                })
+                .expectBody(new ParameterizedTypeReference<CounterState>() {})
                 .consumeWith(counterIdEntityExchangeResult -> {
                     log.info("counterIdEntityExchangeResult: {}", counterIdEntityExchangeResult);
                     var counterId = counterIdEntityExchangeResult.getResponseBody();
                     assertThat(counterId).isNotNull();
-                    assertThat(counterId.getValue()).isEqualTo(UUID.fromString("0-0-0-0-2"));
+                    assertThat(counterId.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-2"));
                     assertThat(counterId.getInitialValue()).isEqualTo(123);
                 });
     }
@@ -92,25 +90,27 @@ class EventSourcingFnApplicationTests {
     void should_create_modifiable_complete_custom_counter_using_spring() {
         // when
         CounterState counterState = createCounterCommandHandler.apply(command ->
-                command.setName("0-0-0-0-5")
+                command.setAggregateId(UUID.fromString("0-0-0-0-5"))
                         .setInitialValue(123)
         );
         log.info("modifiable complete custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(123);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-5"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-5"));
     }
 
     @Test
     void should_create_modifiable_partial_custom_counter_using_spring() {
         // when
-        CounterState counterState = createCounterCommandHandler.apply(command -> command.setName("0-0-0-0-4"));
+        CounterState counterState = createCounterCommandHandler.apply(
+                command -> command.setAggregateId(UUID.fromString("0-0-0-0-4"))
+        );
         log.info("modifiable partial custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-4"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-4"));
     }
 
     @Test
@@ -121,19 +121,18 @@ class EventSourcingFnApplicationTests {
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 
     @Test
     void should_create_modifiable_default_empty_counter_using_spring_handle_empty() {
         // when
-        CounterState counterState = createCounterCommandHandler.handle(createCounterCommand -> {
-        });
+        CounterState counterState = createCounterCommandHandler.handle(createCounterCommand -> {});
         log.info("modifiable default empty counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 
     @Test
@@ -144,19 +143,18 @@ class EventSourcingFnApplicationTests {
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 
     @Test
     void should_create_modifiable_default_empty_counter_using_spring_apply_empty() {
         // when
-        CounterState counterState = createCounterCommandHandler.apply(createCounterCommand -> {
-        });
+        CounterState counterState = createCounterCommandHandler.apply(createCounterCommand -> {});
         log.info("modifiable default empty counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 
     @Test
@@ -166,14 +164,14 @@ class EventSourcingFnApplicationTests {
 
         // when
         CounterState counterState = createCounter.apply(command ->
-                command.setName("0-0-0-0-3")
+                command.setAggregateId(UUID.fromString("0-0-0-0-3"))
                         .setInitialValue(123)
         );
         log.info("modifiable complete custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(123);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-3"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-3"));
     }
 
     @Test
@@ -182,12 +180,14 @@ class EventSourcingFnApplicationTests {
         CreateCounter createCounter = new CreateCounter();
 
         // when
-        CounterState counterState = createCounter.apply(command -> command.setName("0-0-0-0-2"));
+        CounterState counterState = createCounter.apply(
+                command -> command.setAggregateId(UUID.fromString("0-0-0-0-2"))
+        );
         log.info("modifiable partial custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-2"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-2"));
     }
 
     @Test
@@ -196,13 +196,12 @@ class EventSourcingFnApplicationTests {
         CreateCounter createCounter = new CreateCounter();
 
         // when
-        CounterState counterState = createCounter.apply(createCounterCommand -> {
-        });
+        CounterState counterState = createCounter.apply(createCounterCommand -> {});
         log.info("modifiable default empty counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 
     @Test
@@ -210,23 +209,23 @@ class EventSourcingFnApplicationTests {
         // setup infrastructure
         Function<Consumer<CreateCounterCommand>, CounterState> createCounter = createCounterCommandConsumer -> {
             CreateCounterCommand createCounterCommand = new CreateCounterCommand()
-                    .setName(UUID.randomUUID().toString());
+                    .setAggregateId(UUID.randomUUID());
             createCounterCommandConsumer.accept(createCounterCommand);
             return new CounterState()
                     .setInitialValue(createCounterCommand.getInitialValue())
-                    .setValue(UUID.fromString(createCounterCommand.getName()));
+                    .setAggregateId(createCounterCommand.getAggregateId());
         };
 
         // when
         CounterState counterState = createCounter.apply(command ->
-                command.setName("0-0-0-0-3")
+                command.setAggregateId(UUID.fromString("0-0-0-0-3"))
                         .setInitialValue(123)
         );
         log.info("modifiable complete custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(123);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-3"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-3"));
     }
 
     @Test
@@ -234,20 +233,22 @@ class EventSourcingFnApplicationTests {
         // setup infrastructure
         Function<Consumer<CreateCounterCommand>, CounterState> createCounter = createCounterCommandConsumer -> {
             CreateCounterCommand createCounterCommand = new CreateCounterCommand()
-                    .setName(UUID.randomUUID().toString());
+                    .setAggregateId(UUID.randomUUID());
             createCounterCommandConsumer.accept(createCounterCommand);
             return new CounterState()
                     .setInitialValue(createCounterCommand.getInitialValue())
-                    .setValue(UUID.fromString(createCounterCommand.getName()));
+                    .setAggregateId(createCounterCommand.getAggregateId());
         };
 
         // when
-        CounterState counterState = createCounter.apply(command -> command.setName("0-0-0-0-2"));
+        CounterState counterState = createCounter.apply(
+                command -> command.setAggregateId(UUID.fromString("0-0-0-0-2"))
+        );
         log.info("modifiable partial custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-2"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-2"));
     }
 
     @Test
@@ -255,21 +256,20 @@ class EventSourcingFnApplicationTests {
         // setup infrastructure
         Function<Consumer<CreateCounterCommand>, CounterState> createCounter = createCounterCommandConsumer -> {
             CreateCounterCommand createCounterCommand = new CreateCounterCommand()
-                    .setName(UUID.randomUUID().toString());
+                    .setAggregateId(UUID.randomUUID());
             createCounterCommandConsumer.accept(createCounterCommand);
             return new CounterState()
                     .setInitialValue(createCounterCommand.getInitialValue())
-                    .setValue(UUID.fromString(createCounterCommand.getName()));
+                    .setAggregateId(createCounterCommand.getAggregateId());
         };
 
         // when
-        CounterState counterState = createCounter.apply(createCounterCommand -> {
-        });
+        CounterState counterState = createCounter.apply(createCounterCommand -> {});
         log.info("modifiable default empty counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 
     @Test
@@ -278,22 +278,22 @@ class EventSourcingFnApplicationTests {
         Function<CreateCounterCommand, CounterState> createCounter = createCounterCommand ->
                 new CounterState()
                         .setInitialValue(createCounterCommand.getInitialValue())
-                        .setValue(
-                                Optional.ofNullable(createCounterCommand.getName())
-                                        .map(UUID::fromString).orElseGet(UUID::randomUUID)
+                        .setAggregateId(
+                                Optional.ofNullable(createCounterCommand.getAggregateId())
+                                        .orElseGet(UUID::randomUUID)
                         );
 
         // when
         CounterState counterState = createCounter.apply(
                 new CreateCounterCommand()
-                        .setName("0-0-0-0-1")
+                        .setAggregateId(UUID.fromString("0-0-0-0-1"))
                         .setInitialValue(123)
         );
         log.info("custom counter: {}", counterState);
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(123);
-        assertThat(counterState.getValue()).isEqualTo(UUID.fromString("0-0-0-0-1"));
+        assertThat(counterState.getAggregateId()).isEqualTo(UUID.fromString("0-0-0-0-1"));
     }
 
     @Test
@@ -302,9 +302,9 @@ class EventSourcingFnApplicationTests {
         Function<CreateCounterCommand, CounterState> createCounter = createCounterCommand ->
                 new CounterState()
                         .setInitialValue(createCounterCommand.getInitialValue())
-                        .setValue(
-                                Optional.ofNullable(createCounterCommand.getName())
-                                        .map(UUID::fromString).orElseGet(UUID::randomUUID)
+                        .setAggregateId(
+                                Optional.ofNullable(createCounterCommand.getAggregateId())
+                                        .orElseGet(UUID::randomUUID)
                         );
 
         // when
@@ -313,6 +313,6 @@ class EventSourcingFnApplicationTests {
 
         // then
         assertThat(counterState.getInitialValue()).isEqualTo(0);
-        assertThat(counterState.getValue()).isNotNull();
+        assertThat(counterState.getAggregateId()).isNotNull();
     }
 }

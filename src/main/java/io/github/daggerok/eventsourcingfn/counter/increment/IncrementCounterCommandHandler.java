@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import org.springframework.stereotype.Component;
 
 @Component
-public class IncrementCounterCommandHandler implements CommandHandler<IncrementCounterCommand, CounterState> {
+public class IncrementCounterCommandHandler implements CommandHandler<IncrementCounterCommand, CounterState, UUID> {
 
     @Override
     public CounterState apply(Consumer<IncrementCounterCommand> mutation) {
@@ -16,8 +16,8 @@ public class IncrementCounterCommandHandler implements CommandHandler<IncrementC
 
         CounterState state = new CounterState(); // TODO:
         // FIXME: fetch state by aggregate id using repository
-        UUID value = state.getValue();
-        CounterState updated = state.setValue(value).setInitialValue(state.getInitialValue() + 1); // TODO:
+        UUID value = state.getAggregateId();
+        CounterState updated = state.setAggregateId(value).setInitialValue(state.getInitialValue() + 1); // TODO:
         // FIXME: save updated state using repository
         return updated;
     }

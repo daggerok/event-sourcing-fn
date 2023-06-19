@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
-public class CreateCounterCommand implements Command<CreateCounterCommand> {
-    String name = UUID.randomUUID().toString();
+public class CreateCounterCommand implements Command<UUID> {
+    UUID aggregateId = UUID.randomUUID();
     int initialValue = 0;
 }
